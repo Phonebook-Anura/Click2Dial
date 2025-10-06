@@ -1,103 +1,116 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Click2Dial API - Anura Demo</title>
+  <title>Click2Call Anura - Demo</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f6f6f6;
+      background: #f5f5f5;
+      color: #333;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
+      margin: 0;
     }
-    .card {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 320px;
       text-align: center;
-      width: 350px;
     }
+
     select, button {
       width: 100%;
       padding: 10px;
-      margin: 10px 0;
+      margin-top: 1rem;
       font-size: 16px;
-      border-radius: 8px;
+      border-radius: 0.5rem;
       border: 1px solid #ccc;
     }
+
     button {
       background-color: #007bff;
       color: white;
       border: none;
       cursor: pointer;
     }
+
     button:hover {
       background-color: #0056b3;
     }
-    #status {
-      margin-top: 15px;
+
+    .status {
+      margin-top: 1rem;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>📞 Click2Dial API - Anura Demo 2025</h2>
+  <div class="container">
+    <h2>Click2Call - Anura Demo</h2>
     <p>Selecciona un número y haz clic para llamar</p>
 
-    <select id="dst">
+    <select id="numeroDestino">
+      <option value="">-- Selecciona un número --</option>
       <option value="4800000">4800000</option>
-      <option value="3119898">3119898</option>
+      <option value="3119898">to</option>
       <option value="5051111">5051111</option>
+      <!-- Puedes agregar más números aquí -->
     </select>
 
-    <button id="callBtn">Llamar</button>
-    <div id="status"></div>
+    <button id="btnLlamar">📞 Llamar</button>
+
+    <div class="status" id="status"></div>
   </div>
 
   <script>
- async function hacerLlamada() {
-    const numeroSeleccionado = document.getElementById("numero").value;
+    const API_URL = "https://api.anura.pe/adapter/default/click2call";
+    const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6MTIsInNlY3JldElkIjoyMiwidHlwZSI6ImRlZmF1bHQiLCJpYXQiOjE3NTk3ODIxNzV9.0icGQkgvI8iyiXSd673ch8JqFl8oZGI7x45ZnhvgbNU";
+    const SRC = "1021";
 
-    const data = new URLSearchParams();
-    data.append("called", numeroSeleccionado);   // número destino
-    data.append("extension", "1021");            // tu extensión origen
-    data.append("customs", "demo1");             // opcionales
-    data.append("customs", "demo2");
-    data.append("customs", "demo3");
+    document.getElementById("btnLlamar").addEventListener("click", async () => {
+      const dst = document.getElementById("numeroDestino").value;
+      const statusDiv = document.getElementById("status");
 
-    try {
-      const response = await fetch("https://api.anura.pe/adapter/default/click2call", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6MTIsInNlY3JldElkIjoyMiwidHlwZSI6ImRlZmF1bHQiLCJpYXQiOjE3NTk3ODIxNzV9.0icGQkgvI8iyiXSd673ch8JqFl8oZGI7x45ZnhvgbNU",
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: data.toString()
-      });
-
-      const result = await response.text();
-      console.log(result);
-
-      if (response.ok) {
-        document.getElementById("resultado").innerHTML =
-          `<span style="color:green">✅ Llamada iniciada con éxito</span>`;
-      } else {
-        document.getElementById("resultado").innerHTML =
-          `<span style="color:red">❌ Error: ${response.status} ${response.statusText}</span><br>${result}`;
+      if (!dst) {
+        statusDiv.textContent = "⚠️ Selecciona un número primero.";
+        return;
       }
 
-    } catch (error) {
-      console.error("Error:", error);
-      document.getElementById("resultado").innerHTML =
-        `<span style="color:red">⚠️ Error de conexión</span>`;
-    }
-  }
+      statusDiv.textContent = "Llamando...";
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + TOKEN
+          },
+          body: JSON.stringify({ src: SRC, dst })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          statusDiv.textContent = "✅ Llamada iniciada correctamente.";
+          console.log("Respuesta:", data);
+        } else {
+          statusDiv.textContent = "❌ Error: " + (data.message || response.statusText);
+          console.error("Error:", data);
+        }
+      } catch (error) {
+        statusDiv.textContent = "⚠️ Error de conexión o CORS.";
+        console.error("Error:", error);
+      }
+    });
   </script>
 </body>
 </html>
-
