@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -55,13 +54,13 @@
 </head>
 <body>
   <div class="container">
-    <h2>Click2Call - Anura Demo</h2>
+    <h2>Click2Dial - Anura Demo</h2>
     <p>Selecciona un número y haz clic para llamar</p>
 
     <select id="numeroDestino">
       <option value="">-- Selecciona un número --</option>
       <option value="4800000">4800000</option>
-      <option value="3119898">to</option>
+      <option value="3119898">3119898</option>
       <option value="5051111">5051111</option>
       <!-- Puedes agregar más números aquí -->
     </select>
@@ -74,41 +73,47 @@
   <script>
     const API_URL = "https://api.anura.pe/adapter/default/click2call";
     const TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZW5hbnRJZCI6MTIsInNlY3JldElkIjoyMiwidHlwZSI6ImRlZmF1bHQiLCJpYXQiOjE3NTk3ODIxNzV9.0icGQkgvI8iyiXSd673ch8JqFl8oZGI7x45ZnhvgbNU";
-    const SRC = "1021";
+    const EXTENSION = "1021"; // Tu interno de origen
 
     document.getElementById("btnLlamar").addEventListener("click", async () => {
-      const dst = document.getElementById("numeroDestino").value;
+      const called = document.getElementById("numeroDestino").value;
       const statusDiv = document.getElementById("status");
 
-      if (!dst) {
+      if (!called) {
         statusDiv.textContent = "⚠️ Selecciona un número primero.";
         return;
       }
 
-      statusDiv.textContent = "Llamando...";
-      
+      statusDiv.textContent = "📞 Llamando...";
+
+      const data = new URLSearchParams();
+      data.append("called", called);
+      data.append("extension", EXTENSION);
+     
       try {
         const response = await fetch(API_URL, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + TOKEN
+            "Authorization": "Bearer " + TOKEN,
+            "Content-Type": "application/x-www-form-urlencoded"
           },
-          body: JSON.stringify({ src: SRC, dst })
+          body: data.toString()
         });
 
-        const data = await response.json();
+        const result = await response.text();
+        console.log("Respuesta:", result);
 
         if (response.ok) {
           statusDiv.textContent = "✅ Llamada iniciada correctamente.";
-          console.log("Respuesta:", data);
+        } else if (response.status === 401) {
+          statusDiv.textContent = "❌ Token inválido o expirado (401 Unauthorized).";
         } else {
-          statusDiv.textContent = "❌ Error: " + (data.message || response.statusText);
-          console.error("Error:", data);
+          statusDiv.textContent = `❌ Error ${response.status}: ${response.statusText}`;
         }
+
       } catch (error) {
-        statusDiv.textContent = "⚠️ Error de conexión o CORS.";
         console.error("Error:", error);
+        statusDiv.textContent = "⚠️ Error de conexión o CORS.";
       }
     });
   </script>
